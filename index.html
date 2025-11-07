@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brick Tease - Break & Reveal!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            padding: 10px;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: auto;
+            background: #1a1a2e;
+            border-radius: 10px;
+            display: block;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #scorePanel {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            flex: 1;
+            margin: 0 5px;
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 24px;
+            color: #ffd700;
+            margin-top: 5px;
+        }
+
+        #gameOverScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            display: none;
+            z-index: 10;
+            min-width: 300px;
+        }
+
+        #gameOverScreen h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        #gameOverScreen p {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            z-index: 10;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        #startScreen h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        #startScreen p {
+            font-size: 16px;
+            margin: 15px 0;
+            opacity: 0.8;
+        }
+
+        .controls {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .controls p {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        #levelInfo {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            color: white;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ff6b6b);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        #audioControls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .audio-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        #levelComplete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            display: none;
+            z-index: 10;
+            min-width: 300px;
+        }
+
+        #levelComplete h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #6bcf7f;
+        }
+
+        #photoReveal {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* =============================================== */
+        /* MEDIA QUERIES PER MOBILE RESPONSIVE */
+        /* =============================================== */
+        
+        /* Schermi sotto 700px di altezza */
+        @media (max-height: 700px) {
+            #startScreen {
+                padding: 25px 20px;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+            
+            #startScreen h1 {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+            
+            #startScreen p {
+                font-size: 14px;
+                margin: 10px 0;
+            }
+            
+            .controls {
+                margin: 15px 0;
+                padding: 15px;
+            }
+            
+            .controls p {
+                font-size: 13px;
+                margin: 8px 0;
+            }
+        }
+        
+        /* Schermi molto piccoli (sotto 600px) */
+        @media (max-height: 600px) {
+            #startScreen {
+                padding: 20px 15px;
+                transform: translate(-50%, -50%) scale(0.85);
+            }
+            
+            #startScreen h1 {
+                font-size: 24px;
+                margin-bottom: 10px;
+            }
+            
+            #startScreen p {
+                font-size: 12px;
+                margin: 8px 0;
+            }
+            
+            .controls {
+                display: none; /* Nascondi istruzioni dettagliate su schermi piccoli */
+            }
+            
+            .btn {
+                padding: 12px 25px;
+                font-size: 16px;
+            }
+        }
+        
+        /* Schermi ultra piccoli (sotto 500px) */
+        @media (max-height: 500px) {
+            #startScreen {
+                padding: 15px 10px;
+                transform: translate(-50%, -50%) scale(0.75);
+            }
+            
+            #startScreen h1 {
+                font-size: 20px;
+                margin-bottom: 8px;
+            }
+            
+            #startScreen p {
+                font-size: 11px;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="audioControls">
+            <button class="audio-btn" id="musicToggle" onclick="toggleMusic()">🎵</button>
+            <button class="audio-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+        </div>
+        
+        <div id="scorePanel">
+            <div class="stat">
+                <span>⭐ SCORE</span>
+                <span class="stat-value" id="score">0</span>
+            </div>
+            <div class="stat">
+                <span>❤️ LIVES</span>
+                <span class="stat-value" id="lives">3</span>
+            </div>
+            <div class="stat">
+                <span>🎯 LEVEL</span>
+                <span class="stat-value" id="level">1</span>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+        <div id="levelInfo">
+            <div>🧱 Bricks Destroyed: <strong><span id="bricksDestroyed">0</span> / <span id="totalBricks">48</span></strong></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div style="margin-top: 10px; font-size: 14px;">📸 Revealing photo... <strong><span id="revealPercent">0</span>%</strong></div>
+        </div>
+
+        <div id="startScreen">
+            <h1>🧱 BRICK TEASE</h1>
+            <p>🎮 Break bricks to reveal exclusive photos!</p>
+            <div class="controls">
+                <p>🖱️ <strong>Desktop:</strong> Move mouse to control paddle</p>
+                <p>📱 <strong>Mobile:</strong> Touch and drag to move</p>
+                <p>⏸️ Press SPACE to pause</p>
+            </div>
+            <p>📸 Each level reveals a new photo!</p>
+            <p>🎵 8-bit music included!</p>
+            <button class="btn" onclick="startGame()">🚀 START GAME</button>
+        </div>
+
+        <div id="levelComplete">
+            <h2>🎉 LEVEL COMPLETE!</h2>
+            <p>Photo fully revealed!</p>
+            <img id="photoReveal" src="" alt="Revealed Photo">
+            <p>Score: <strong id="levelScore">0</strong></p>
+            <button class="btn" onclick="nextLevel()">➡️ NEXT LEVEL</button>
+        </div>
+
+        <div id="gameOverScreen">
+            <h2 id="gameOverTitle">GAME OVER</h2>
+            <p>Final Score: <strong id="finalScore">0</strong></p>
+            <p>Levels Completed: <strong id="levelsCompleted">0</strong></p>
+            <p>Photos Unlocked: <strong id="photosUnlocked">0</strong></p>
+            <button class="btn" onclick="restartGame()">🔄 PLAY AGAIN</button>
+            <button class="btn" onclick="sendScoreToBot()">📸 VIEW ALL PHOTOS</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Audio Context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+        let musicEnabled = true;
+        let backgroundMusic = null;
+        
+        // Game variables
+        let gameState = 'menu'; // menu, playing, paused, levelComplete, gameover
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let bricksDestroyed = 0;
+        let photosUnlocked = 0;
+        let currentPhotoUrl = null;
+        let photoImage = null;
+        let allPhotos = []; // Will be filled from URL params or default
+        let gameId = null; // Game ID from URL
+
+        // Paddle
+        const paddle = {
+            width: 100,
+            height: 15,
+            x: canvas.width / 2 - 50,
+            y: canvas.height - 30,
+            speed: 8,
+            dx: 0
+        };
+
+        // Ball
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 8,
+            speed: 5,
+            dx: 4,
+            dy: -4
+        };
+
+        // Bricks
+        const brickInfo = {
+            rows: 6,
+            cols: 8,
+            width: 45,
+            height: 20,
+            padding: 5,
+            offsetX: 15,
+            offsetY: 60,
+            colors: ['#ff6b6b', '#ff8c42', '#ffd93d', '#6bcf7f', '#4d9de0', '#9b59b6']
+        };
+
+        let bricks = [];
+
+        // Parse URL parameters for photos
+        function parsePhotosFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const photosParam = params.get('photos');
+            gameId = params.get('game_id'); // Get game ID
+            
+            if (photosParam) {
+                allPhotos = photosParam.split(',');
+            } else {
+                // Default demo photos (gradients)
+                allPhotos = [
+                    'gradient1', 'gradient2', 'gradient3', 
+                    'gradient4', 'gradient5'
+                ];
+            }
+            
+            console.log('Game ID:', gameId);
+            console.log('Photos loaded:', allPhotos.length);
+            
+            loadCurrentPhoto();
+        }
+
+        // Load photo for current level
+        function loadCurrentPhoto() {
+            const photoIndex = (level - 1) % allPhotos.length;
+            currentPhotoUrl = allPhotos[photoIndex];
+            
+            if (currentPhotoUrl.startsWith('gradient')) {
+                // Create gradient as demo
+                photoImage = null; // Will draw gradient directly
+            } else {
+                // Load actual image
+                photoImage = new Image();
+                // photoImage.crossOrigin = "anonymous"; // ← COMMENTATO: causa errori CORS con Telegram
+                photoImage.src = currentPhotoUrl;
+            }
+        }
+
+        // Initialize bricks
+        function initBricks() {
+            bricks = [];
+            for (let row = 0; row < brickInfo.rows; row++) {
+                bricks[row] = [];
+                for (let col = 0; col < brickInfo.cols; col++) {
+                    bricks[row][col] = {
+                        x: col * (brickInfo.width + brickInfo.padding) + brickInfo.offsetX,
+                        y: row * (brickInfo.height + brickInfo.padding) + brickInfo.offsetY,
+                        status: 1,
+                        color: brickInfo.colors[row]
+                    };
+                }
+            }
+            bricksDestroyed = 0;
+            updateBrickCount();
+        }
+
+        // Draw background photo with blur
+        function drawBackgroundPhoto() {
+            const totalBricks = brickInfo.rows * brickInfo.cols;
+            const progress = bricksDestroyed / totalBricks;
+            
+            // Calculate blur amount (20px at start, 0px at end)
+            const blurAmount = Math.max(0, 20 * (1 - progress));
+            
+            ctx.save();
+            ctx.filter = `blur(${blurAmount}px)`;
+            
+            if (photoImage && photoImage.complete) {
+                // Draw actual photo
+                ctx.drawImage(photoImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                // Draw demo gradient
+                const gradientColors = [
+                    ['#ff6b6b', '#4d9de0'],
+                    ['#ffd93d', '#9b59b6'],
+                    ['#6bcf7f', '#ff8c42'],
+                    ['#764ba2', '#667eea'],
+                    ['#f093fb', '#f5576c']
+                ];
+                
+                const colorPair = gradientColors[(level - 1) % gradientColors.length];
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, colorPair[0]);
+                gradient.addColorStop(1, colorPair[1]);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            ctx.filter = 'none';
+            ctx.restore();
+            
+            // Update reveal percentage
+            const revealPercent = Math.round(progress * 100);
+            document.getElementById('revealPercent').textContent = revealPercent;
+        }
+
+        // Draw paddle
+        function drawPaddle() {
+            ctx.fillStyle = '#ffd700';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ffd700';
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+            ctx.shadowBlur = 0;
+        }
+
+        // Draw ball
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#fff';
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0;
+        }
+
+        // Draw bricks
+        function drawBricks() {
+            bricks.forEach(row => {
+                row.forEach(brick => {
+                    if (brick.status === 1) {
+                        ctx.fillStyle = brick.color;
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = brick.color;
+                        ctx.fillRect(brick.x, brick.y, brickInfo.width, brickInfo.height);
+                        ctx.shadowBlur = 0;
+                        
+                        // Border
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.strokeRect(brick.x, brick.y, brickInfo.width, brickInfo.height);
+                    }
+                });
+            });
+        }
+
+        // Move paddle
+        function movePaddle() {
+            paddle.x += paddle.dx;
+
+            // Wall detection
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) {
+                paddle.x = canvas.width - paddle.width;
+            }
+        }
+
+        // Move ball
+        function moveBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Wall collision (sides)
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.dx *= -1;
+                playSound('wall');
+            }
+
+            // Wall collision (top)
+            if (ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+                playSound('wall');
+            }
+
+            // Paddle collision
+            if (
+                ball.y + ball.radius > paddle.y &&
+                ball.x > paddle.x &&
+                ball.x < paddle.x + paddle.width
+            ) {
+                // Calculate hit position (-1 to 1)
+                let hitPos = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
+                ball.dx = hitPos * ball.speed;
+                ball.dy = -Math.abs(ball.dy);
+                playSound('paddle');
+            }
+
+            // Bottom collision (lose life)
+            if (ball.y + ball.radius > canvas.height) {
+                lives--;
+                updateUI();
+                playSound('lose');
+                
+                if (lives === 0) {
+                    gameOver(false);
+                } else {
+                    resetBall();
+                }
+            }
+        }
+
+        // Check brick collision
+        function checkBrickCollision() {
+            bricks.forEach(row => {
+                row.forEach(brick => {
+                    if (brick.status === 1) {
+                        if (
+                            ball.x + ball.radius > brick.x &&
+                            ball.x - ball.radius < brick.x + brickInfo.width &&
+                            ball.y + ball.radius > brick.y &&
+                            ball.y - ball.radius < brick.y + brickInfo.height
+                        ) {
+                            ball.dy *= -1;
+                            brick.status = 0;
+                            score += 10;
+                            bricksDestroyed++;
+                            
+                            playSound('brick');
+                            updateUI();
+                            
+                            // Check level complete
+                            if (bricksDestroyed === brickInfo.rows * brickInfo.cols) {
+                                levelComplete();
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        // Reset ball
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = (Math.random() > 0.5 ? 1 : -1) * 4;
+            ball.dy = -4;
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('level').textContent = level;
+            document.getElementById('bricksDestroyed').textContent = bricksDestroyed;
+            
+            const totalBricks = brickInfo.rows * brickInfo.cols;
+            const progress = (bricksDestroyed / totalBricks) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function updateBrickCount() {
+            document.getElementById('totalBricks').textContent = brickInfo.rows * brickInfo.cols;
+        }
+
+        // 8-BIT BACKGROUND MUSIC - Extended arcade style (30+ seconds)
+        function startBackgroundMusic() {
+            if (!musicEnabled) return;
+            
+            stopBackgroundMusic();
+            
+            // Extended 8-bit melody inspired by classic arcade games
+            // Structure: Intro -> Main Theme A -> Main Theme B -> Bridge -> Main Theme A (repeat)
+            const melody = [
+                // INTRO (4 bars)
+                { note: 523, duration: 0.15 }, // C5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 784, duration: 0.15 }, // G5
+                { note: 1047, duration: 0.3 }, // C6
+                { note: 784, duration: 0.15 }, // G5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 523, duration: 0.3 }, // C5
+                { note: 0, duration: 0.15 }, // REST
+                
+                { note: 587, duration: 0.15 }, // D5
+                { note: 698, duration: 0.15 }, // F5
+                { note: 880, duration: 0.15 }, // A5
+                { note: 1047, duration: 0.3 }, // C6
+                { note: 880, duration: 0.15 }, // A5
+                { note: 698, duration: 0.15 }, // F5
+                { note: 587, duration: 0.3 }, // D5
+                { note: 0, duration: 0.15 }, // REST
+                
+                // MAIN THEME A (8 bars)
+                { note: 523, duration: 0.2 }, // C5
+                { note: 523, duration: 0.2 }, // C5
+                { note: 659, duration: 0.2 }, // E5
+                { note: 784, duration: 0.3 }, // G5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 523, duration: 0.3 }, // C5
+                { note: 0, duration: 0.15 }, // REST
+                
+                { note: 587, duration: 0.2 }, // D5
+                { note: 587, duration: 0.2 }, // D5
+                { note: 698, duration: 0.2 }, // F5
+                { note: 880, duration: 0.3 }, // A5
+                { note: 698, duration: 0.15 }, // F5
+                { note: 587, duration: 0.3 }, // D5
+                { note: 0, duration: 0.15 }, // REST
+                
+                { note: 659, duration: 0.2 }, // E5
+                { note: 784, duration: 0.2 }, // G5
+                { note: 880, duration: 0.2 }, // A5
+                { note: 784, duration: 0.2 }, // G5
+                { note: 659, duration: 0.2 }, // E5
+                { note: 523, duration: 0.4 }, // C5
+                
+                { note: 698, duration: 0.2 }, // F5
+                { note: 784, duration: 0.2 }, // G5
+                { note: 880, duration: 0.2 }, // A5
+                { note: 1047, duration: 0.6 }, // C6
+                { note: 0, duration: 0.2 }, // REST
+                
+                // MAIN THEME B (8 bars) - Different melodic pattern
+                { note: 1047, duration: 0.15 }, // C6
+                { note: 988, duration: 0.15 }, // B5
+                { note: 880, duration: 0.15 }, // A5
+                { note: 784, duration: 0.3 }, // G5
+                { note: 880, duration: 0.15 }, // A5
+                { note: 784, duration: 0.15 }, // G5
+                { note: 659, duration: 0.3 }, // E5
+                { note: 0, duration: 0.15 }, // REST
+                
+                { note: 784, duration: 0.15 }, // G5
+                { note: 698, duration: 0.15 }, // F5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 587, duration: 0.3 }, // D5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 698, duration: 0.15 }, // F5
+                { note: 784, duration: 0.3 }, // G5
+                { note: 0, duration: 0.15 }, // REST
+                
+                { note: 523, duration: 0.2 }, // C5
+                { note: 659, duration: 0.2 }, // E5
+                { note: 784, duration: 0.2 }, // G5
+                { note: 659, duration: 0.2 }, // E5
+                { note: 698, duration: 0.4 }, // F5
+                { note: 0, duration: 0.2 }, // REST
+                
+                { note: 587, duration: 0.2 }, // D5
+                { note: 698, duration: 0.2 }, // F5
+                { note: 880, duration: 0.2 }, // A5
+                { note: 698, duration: 0.2 }, // F5
+                { note: 784, duration: 0.4 }, // G5
+                { note: 0, duration: 0.2 }, // REST
+                
+                // BRIDGE (4 bars) - Rhythmic section
+                { note: 659, duration: 0.15 }, // E5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 784, duration: 0.15 }, // G5
+                { note: 880, duration: 0.15 }, // A5
+                { note: 880, duration: 0.15 }, // A5
+                { note: 880, duration: 0.3 }, // A5
+                { note: 0, duration: 0.15 }, // REST
+                
+                { note: 698, duration: 0.15 }, // F5
+                { note: 698, duration: 0.15 }, // F5
+                { note: 698, duration: 0.15 }, // F5
+                { note: 784, duration: 0.15 }, // G5
+                { note: 880, duration: 0.15 }, // A5
+                { note: 880, duration: 0.15 }, // A5
+                { note: 1047, duration: 0.3 }, // C6
+                { note: 0, duration: 0.15 }, // REST
+                
+                { note: 784, duration: 0.2 }, // G5
+                { note: 880, duration: 0.2 }, // A5
+                { note: 1047, duration: 0.2 }, // C6
+                { note: 880, duration: 0.2 }, // A5
+                { note: 784, duration: 0.2 }, // G5
+                { note: 659, duration: 0.2 }, // E5
+                { note: 523, duration: 0.4 }, // C5
+                
+                // CLIMAX (4 bars)
+                { note: 1047, duration: 0.2 }, // C6
+                { note: 988, duration: 0.2 }, // B5
+                { note: 1047, duration: 0.2 }, // C6
+                { note: 1175, duration: 0.4 }, // D6
+                { note: 1047, duration: 0.2 }, // C6
+                { note: 880, duration: 0.4 }, // A5
+                
+                { note: 1047, duration: 0.2 }, // C6
+                { note: 1175, duration: 0.2 }, // D6
+                { note: 1319, duration: 0.2 }, // E6
+                { note: 1175, duration: 0.2 }, // D6
+                { note: 1047, duration: 0.2 }, // C6
+                { note: 880, duration: 0.2 }, // A5
+                { note: 784, duration: 0.4 }, // G5
+                
+                // OUTRO/TRANSITION (4 bars)
+                { note: 659, duration: 0.3 }, // E5
+                { note: 784, duration: 0.3 }, // G5
+                { note: 880, duration: 0.3 }, // A5
+                { note: 1047, duration: 0.5 }, // C6
+                { note: 0, duration: 0.2 }, // REST
+                
+                { note: 523, duration: 0.15 }, // C5
+                { note: 659, duration: 0.15 }, // E5
+                { note: 784, duration: 0.15 }, // G5
+                { note: 1047, duration: 0.6 }, // C6
+                { note: 0, duration: 0.3 }, // REST
+            ];
+            
+            // Add bass line (octave lower) for richer 8-bit sound
+            const bassline = [
+                { note: 262, duration: 0.6 }, // C4
+                { note: 294, duration: 0.6 }, // D4
+                { note: 262, duration: 0.4 }, // C4
+                { note: 294, duration: 0.4 }, // D4
+                { note: 330, duration: 0.4 }, // E4
+                { note: 392, duration: 0.4 }, // G4
+                { note: 440, duration: 0.8 }, // A4
+                { note: 349, duration: 0.6 }, // F4
+                { note: 392, duration: 0.6 }, // G4
+                { note: 262, duration: 0.8 }, // C4
+                { note: 294, duration: 0.6 }, // D4
+                { note: 330, duration: 0.6 }, // E4
+                { note: 392, duration: 0.8 }, // G4
+                { note: 349, duration: 0.4 }, // F4
+                { note: 330, duration: 0.4 }, // E4
+                { note: 294, duration: 0.8 }, // D4
+                { note: 262, duration: 1.2 }, // C4
+            ];
+            
+            let currentTime = audioContext.currentTime;
+            
+            function playMelody() {
+                // Play main melody
+                melody.forEach((note) => {
+                    if (note.note > 0) {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.type = 'square'; // 8-bit sound
+                        osc.frequency.setValueAtTime(note.note, currentTime);
+                        
+                        gain.gain.setValueAtTime(0.08, currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, currentTime + note.duration);
+                        
+                        osc.start(currentTime);
+                        osc.stop(currentTime + note.duration);
+                    }
+                    
+                    currentTime += note.duration;
+                });
+                
+                // Play bassline
+                let bassTime = audioContext.currentTime;
+                bassline.forEach((note) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.type = 'triangle'; // Softer bass
+                    osc.frequency.setValueAtTime(note.note, bassTime);
+                    
+                    gain.gain.setValueAtTime(0.12, bassTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, bassTime + note.duration);
+                    
+                    osc.start(bassTime);
+                    osc.stop(bassTime + note.duration);
+                    
+                    bassTime += note.duration;
+                });
+                
+                // Loop music
+                const totalDuration = melody.reduce((sum, note) => sum + note.duration, 0);
+                backgroundMusic = setTimeout(() => {
+                    currentTime = audioContext.currentTime;
+                    playMelody();
+                }, totalDuration * 1000);
+            }
+            
+            playMelody();
+        }
+
+        function stopBackgroundMusic() {
+            if (backgroundMusic) {
+                clearTimeout(backgroundMusic);
+                backgroundMusic = null;
+            }
+            // ✅ FERMA IMMEDIATAMENTE l'audio context per evitare sovrapposizioni
+            if (audioContext && audioContext.state === 'running') {
+                // Crea un nuovo audio context per ripartire pulito
+                audioContext.suspend().then(() => {
+                    setTimeout(() => {
+                        if (audioContext.state === 'suspended') {
+                            audioContext.resume();
+                        }
+                    }, 100);
+                });
+            }
+        }
+
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            const btn = document.getElementById('musicToggle');
+            btn.textContent = musicEnabled ? '🎵' : '🔇';
+            
+            if (musicEnabled && gameState === 'playing') {
+                startBackgroundMusic();
+            } else {
+                stopBackgroundMusic();
+            }
+        }
+
+        // SOUND EFFECTS
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            const now = audioContext.currentTime;
+            
+            switch(type) {
+                case 'brick':
+                    oscillator.frequency.setValueAtTime(800, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.1);
+                    break;
+                    
+                case 'paddle':
+                    oscillator.frequency.setValueAtTime(300, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.05);
+                    break;
+                    
+                case 'wall':
+                    oscillator.frequency.setValueAtTime(400, now);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.03);
+                    break;
+                    
+                case 'lose':
+                    oscillator.frequency.setValueAtTime(400, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.3);
+                    break;
+                    
+                case 'levelComplete':
+                    const notes = [523, 659, 784, 1047, 1319];
+                    notes.forEach((freq, index) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.frequency.setValueAtTime(freq, now + index * 0.15);
+                        gain.gain.setValueAtTime(0.25, now + index * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.15 + 0.3);
+                        osc.start(now + index * 0.15);
+                        osc.stop(now + index * 0.15 + 0.3);
+                    });
+                    break;
+                    
+                case 'win':
+                    const victoryNotes = [523, 659, 784, 1047, 1319, 1568];
+                    victoryNotes.forEach((freq, index) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.frequency.setValueAtTime(freq, now + index * 0.15);
+                        gain.gain.setValueAtTime(0.25, now + index * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.15 + 0.3);
+                        osc.start(now + index * 0.15);
+                        osc.stop(now + index * 0.15 + 0.3);
+                    });
+                    break;
+            }
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        // Draw game
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Disegna sempre lo sfondo
+            drawBackgroundPhoto();
+            
+            // Disegna elementi del gioco
+            drawBricks();
+            drawBall();
+            drawPaddle();
+        }
+
+        // Update game
+        function update() {
+            if (gameState === 'playing') {
+                movePaddle();
+                moveBall();
+                checkBrickCollision();
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            gameState = 'playing';
+            parsePhotosFromURL();
+            initBricks();
+            resetBall();
+            updateUI();
+            startBackgroundMusic();
+        }
+
+        // Level complete
+        function levelComplete() {
+            gameState = 'levelComplete';
+            stopBackgroundMusic();
+            playSound('levelComplete');
+            
+            photosUnlocked++;
+            
+            document.getElementById('levelScore').textContent = score;
+            
+            // Show revealed photo
+            const photoRevealImg = document.getElementById('photoReveal');
+            if (photoImage && photoImage.complete) {
+                photoRevealImg.src = photoImage.src;
+            } else {
+                // Create canvas with gradient for demo
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 400;
+                tempCanvas.height = 300;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                const gradientColors = [
+                    ['#ff6b6b', '#4d9de0'],
+                    ['#ffd93d', '#9b59b6'],
+                    ['#6bcf7f', '#ff8c42'],
+                    ['#764ba2', '#667eea'],
+                    ['#f093fb', '#f5576c']
+                ];
+                
+                const colorPair = gradientColors[(level - 1) % gradientColors.length];
+                const gradient = tempCtx.createLinearGradient(0, 0, 400, 300);
+                gradient.addColorStop(0, colorPair[0]);
+                gradient.addColorStop(1, colorPair[1]);
+                tempCtx.fillStyle = gradient;
+                tempCtx.fillRect(0, 0, 400, 300);
+                
+                photoRevealImg.src = tempCanvas.toDataURL();
+            }
+            
+            document.getElementById('levelComplete').style.display = 'block';
+        }
+
+        // Next level
+        function nextLevel() {
+            document.getElementById('levelComplete').style.display = 'none';
+            
+            // ✅ FERMA la musica prima (evita accavallamento)
+            stopBackgroundMusic();
+            
+            level++;
+            lives = Math.min(lives + 1, 5); // Bonus life
+            loadCurrentPhoto();
+            initBricks();
+            resetBall();
+            updateUI();
+            gameState = 'playing';
+            
+            // ✅ Riavvia musica dopo 500ms (il suono vittoria finisce)
+            setTimeout(() => {
+                startBackgroundMusic();
+            }, 500);
+        }
+
+        // Game over
+        function gameOver(won) {
+            gameState = 'gameover';
+            stopBackgroundMusic();
+            
+            if (won) {
+                playSound('win');
+            }
+            
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const gameOverTitle = document.getElementById('gameOverTitle');
+            
+            if (won) {
+                gameOverTitle.textContent = '🎉 ALL LEVELS COMPLETE! 🎉';
+                gameOverTitle.style.color = '#6bcf7f';
+            } else {
+                gameOverTitle.textContent = '😢 GAME OVER';
+                gameOverTitle.style.color = '#ff6b6b';
+            }
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('levelsCompleted').textContent = level - 1;
+            document.getElementById('photosUnlocked').textContent = photosUnlocked;
+            
+            gameOverScreen.style.display = 'block';
+        }
+
+        // Restart game
+        function restartGame() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            
+            // ✅ FERMA musica prima di riavviare
+            stopBackgroundMusic();
+            
+            score = 0;
+            lives = 3;
+            level = 1;
+            bricksDestroyed = 0;
+            photosUnlocked = 0;
+            gameState = 'playing';
+            loadCurrentPhoto();
+            initBricks();
+            resetBall();
+            updateUI();
+            
+            // ✅ Riavvia musica dopo 300ms
+            setTimeout(() => {
+                startBackgroundMusic();
+            }, 300);
+        }
+
+        // Send score to Telegram bot
+        function sendScoreToBot() {
+            const data = {
+                score: score,
+                levelsCompleted: level - 1,
+                photosUnlocked: photosUnlocked,
+                gameId: gameId
+            };
+            
+            console.log('Sending data to bot:', data);
+            
+            // Telegram WebApp API
+            if (window.Telegram && window.Telegram.WebApp) {
+                // Invia i dati al bot
+                window.Telegram.WebApp.sendData(JSON.stringify(data));
+                
+                // Mostra feedback
+                window.Telegram.WebApp.showAlert(
+                    `🎉 Game Complete!\n\n` +
+                    `⭐ Score: ${score}\n` +
+                    `🎯 Levels: ${level - 1}\n` +
+                    `📸 Photos unlocked: ${photosUnlocked}\n\n` +
+                    `Check your chat for unlocked photos!`
+                );
+                
+                // Chiudi WebApp dopo 2 secondi
+                setTimeout(() => {
+                    window.Telegram.WebApp.close();
+                }, 2000);
+            } else {
+                // Modalità demo (non su Telegram)
+                alert(
+                    `🎉 Game Complete!\n\n` +
+                    `Photos unlocked: ${photosUnlocked}\n` +
+                    `Score: ${score}\n` +
+                    `Levels: ${level - 1}\n\n` +
+                    `(In Telegram, you would receive the photos now)`
+                );
+            }
+        }
+
+        // Mouse controls
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameState === 'playing') {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                paddle.x = mouseX - paddle.width / 2;
+                
+                if (paddle.x < 0) paddle.x = 0;
+                if (paddle.x + paddle.width > canvas.width) {
+                    paddle.x = canvas.width - paddle.width;
+                }
+            }
+        });
+
+        // Touch controls
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState === 'playing') {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const touchX = touch.clientX - rect.left;
+                paddle.x = touchX - paddle.width / 2;
+                
+                if (paddle.x < 0) paddle.x = 0;
+                if (paddle.x + paddle.width > canvas.width) {
+                    paddle.x = canvas.width - paddle.width;
+                }
+            }
+        }, { passive: false });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                paddle.dx = -paddle.speed;
+            } else if (e.key === 'ArrowRight') {
+                paddle.dx = paddle.speed;
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                if (gameState === 'playing') {
+                    gameState = 'paused';
+                    stopBackgroundMusic();
+                } else if (gameState === 'paused') {
+                    gameState = 'playing';
+                    startBackgroundMusic();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                paddle.dx = 0;
+            }
+        });
+
+        // Initialize Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+
+        // Start game loop
+        gameLoop();
+    </script>
+</body>
+</html>
