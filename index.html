@@ -386,6 +386,7 @@
         let soundEnabled = true;
         let musicEnabled = true;
         let backgroundMusic = null;
+        let activeOscillators = []; // ✅ TRACCIA tutti gli oscillatori attivi
         
         // Game variables
         let gameState = 'menu'; // menu, playing, paused, levelComplete, gameover
@@ -866,6 +867,15 @@
                         
                         osc.start(currentTime);
                         osc.stop(currentTime + note.duration);
+                        
+                        // ✅ TRACCIA l'oscillatore
+                        activeOscillators.push(osc);
+                        
+                        // ✅ Rimuovilo quando finisce
+                        osc.onended = () => {
+                            const index = activeOscillators.indexOf(osc);
+                            if (index > -1) activeOscillators.splice(index, 1);
+                        };
                     }
                     
                     currentTime += note.duration;
@@ -889,6 +899,15 @@
                     osc.start(bassTime);
                     osc.stop(bassTime + note.duration);
                     
+                    // ✅ TRACCIA l'oscillatore
+                    activeOscillators.push(osc);
+                    
+                    // ✅ Rimuovilo quando finisce
+                    osc.onended = () => {
+                        const index = activeOscillators.indexOf(osc);
+                        if (index > -1) activeOscillators.splice(index, 1);
+                    };
+                    
                     bassTime += note.duration;
                 });
                 
@@ -904,21 +923,24 @@
         }
 
         function stopBackgroundMusic() {
+            // ✅ 1. Ferma il timeout del loop
             if (backgroundMusic) {
                 clearTimeout(backgroundMusic);
                 backgroundMusic = null;
             }
-            // ✅ FERMA IMMEDIATAMENTE l'audio context per evitare sovrapposizioni
-            if (audioContext && audioContext.state === 'running') {
-                // Crea un nuovo audio context per ripartire pulito
-                audioContext.suspend().then(() => {
-                    setTimeout(() => {
-                        if (audioContext.state === 'suspended') {
-                            audioContext.resume();
-                        }
-                    }, 100);
-                });
-            }
+            
+            // ✅ 2. FERMA tutti gli oscillatori attivi
+            activeOscillators.forEach(osc => {
+                try {
+                    osc.stop();
+                    osc.disconnect();
+                } catch (e) {
+                    // Oscillatore già fermato, ignora errore
+                }
+            });
+            
+            // ✅ 3. Svuota l'array
+            activeOscillators = [];
         }
 
         function toggleMusic() {
